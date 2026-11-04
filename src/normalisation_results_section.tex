@@ -1,0 +1,92 @@
+% ====================================================================
+% PLACEMENT: new subsubsection, directly AFTER
+%   "Subject-Independent Evaluation by Grouped Cross-Validation"
+% and before "Summary of Preliminary Findings".
+% Requires \usepackage{tabularx} (already added earlier).
+%
+% ALSO ADD these two rows to the earlier table tab:cv-summary
+% (before its closing \hline):
+%
+% Transformer, grouped 10-fold cross-validation with per-subject normalisation & 33.7\% (CI 31.5--35.8) & 0.336 & Same folds as the row above; all 86 subjects tested \\
+% Random Forest, shape features and per-subject normalisation, same 10 folds & 34.7\% (CI 32.4--37.1) & 0.335 & Indistinguishable from the Transformer \\
+%
+% OPTIONAL, after running compare_cv.py on the two Transformer prediction files:
+% if the 95% interval for (with - without normalisation) excludes zero, add one
+% sentence to the paragraph "The Transformer ..." below, e.g.
+%   "A paired bootstrap over subjects gave an accuracy difference of +X
+%    (95\% interval [LO, HI])."
+% If it includes zero, keep the wording "modest and not established" as written.
+%
+% SUMMARY BULLET to add under "Summary of Preliminary Findings":
+%   Per-subject feature normalisation raised cross-validated five-class macro-F1
+%   from 0.307 to 0.336 for the Transformer, and a Random Forest with shape
+%   features and the same normalisation reached 0.335, so model complexity adds
+%   nothing on these features.
+%
+% REPLACE the "Remaining Work" text with the paragraph at the very bottom.
+% ====================================================================
+
+\subsubsection{Feature Engineering and Per-Subject Normalisation}
+
+Two observations motivated further changes to the input representation. First, a Random Forest on handcrafted features and the Transformer reached the same ceiling (Table~\ref{tab:cv-summary}), which points to the information in the input rather than the classifier. Second, the Transformer over-predicted baseline (32.1\% of all predictions against a true share of 20\%, Table~\ref{tab:cv-confusion}), which is what would be expected if differences in resting level between subjects mask the smaller within-subject effect of pain. Three changes were therefore examined.
+
+\paragraph{Shape features.} For each of the 20 window-level features (four statistics for each of five channels), six descriptors of its ten-step trajectory were computed: mean, standard deviation, linear slope, the relative position of the maximum and of the minimum, and the change from the first to the last window, giving 120 features per trial. This was motivated by Gouverneur et al.\ \hyperlink{ref18}{[18]}, who found that the position of the extremes and the start-to-end change were among the most discriminative simple features of the EDA signal, and which the per-window statistics expose only indirectly.
+
+\paragraph{Per-subject normalisation.} Every feature was z-scored within each subject, using the mean and standard deviation of that subject's own trials. No class labels and no data from other subjects are involved, but the statistics of a held-out subject are computed from that subject's own unlabeled trials. This implies that a new individual would need a set of recorded trials before the model could be applied, which is a limitation of the method rather than of the evaluation. For the Transformer, this step was applied to the sequence input before the train-only standardisation described earlier.
+
+\paragraph{Prior-matched decoding.} Predicted class probabilities were rescaled so that the predicted class shares over the test trials were uniform. This uses no labels but assumes balanced classes, which holds for BioVid by design (20 trials per class per subject) and would not hold in clinical use.
+
+The four cumulative variants (A: window means only; B: A plus shape features; C: B with per-subject normalisation; D: C with prior-matched decoding) were compared with a Random Forest (200 trees, minimum leaf size 2) and a histogram gradient-boosting classifier (150 iterations, learning rate 0.05, 15 leaves, L2 regularisation 1.0) on identical subject-grouped 10-fold partitions. The variants were chosen on one random partition (seed 0) and the preferred variant was then confirmed once on a fresh partition (seed 42) with the Random Forest. All variants and models tried are reported in Table~\ref{tab:fe-variants}; none were omitted.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Five-class accuracy / macro-F1 under grouped 10-fold cross-validation for the cumulative feature variants (chance accuracy 0.20). Seed 42 is a fresh partition used to confirm the choice made on seed 0.}
+\label{tab:fe-variants}
+\begin{tabular}{lccc}
+\hline
+\textbf{Variant} & \textbf{RF, seed 0} & \textbf{HGB, seed 0} & \textbf{RF, seed 42} \\
+\hline
+A: window means only & 0.270 / 0.264 & 0.267 / 0.260 & 0.275 / 0.268 \\
+B: + shape features & 0.322 / 0.307 & 0.315 / 0.304 & 0.322 / 0.307 \\
+C: + per-subject normalisation & 0.350 / 0.339 & 0.347 / 0.339 & 0.347 / 0.335 \\
+D: + prior-matched decoding & 0.352 / 0.338 & 0.349 / 0.341 & 0.347 / 0.333 \\
+\hline
+\end{tabular}
+\end{table}
+
+Shape features raised macro-F1 by about 0.04 and per-subject normalisation by a further 0.03, so variant C improves on variant A by 0.067 to 0.079 depending on model and partition. The improvement was reproduced on the fresh partition (macro-F1 0.268 to 0.335; the accuracy intervals, 0.258--0.291 for A and 0.324--0.371 for C, do not overlap), and the two classifiers agree. Prior-matched decoding changed macro-F1 by no more than 0.006 in either direction and was not adopted.
+
+\paragraph{The Transformer with per-subject normalisation.} The normalisation was then applied to the Transformer and evaluated with the same grouped 10-fold procedure, on the same fold partition as the earlier Transformer evaluation. Pooled five-class accuracy was 33.7\% (95\% CI 31.5--35.8\%; chance 20\%) and macro-F1 was 0.336. Fold accuracy ranged from 28.9\% to 35.9\%, and per-subject accuracy had mean 33.7\% with standard deviation 10.2\% (range 12\% to 56\%). Relative to the same evaluation without normalisation (31.6\%, macro-F1 0.307), accuracy rose by 2.1 percentage points and macro-F1 by 0.030 on the same 86 subjects. The bootstrap intervals of the two runs overlap, so the improvement is modest and should not be treated as established on its own; the larger and independently reproduced gain is that of the Random Forest in Table~\ref{tab:fe-variants}. On the same partition, the Random Forest with shape features and per-subject normalisation reached accuracy 0.347 and macro-F1 0.335, which is indistinguishable from the Transformer (0.337 and 0.336). On these features, the added complexity of the Transformer therefore buys no measurable benefit, in line with the observation of Gouverneur et al.\ \hyperlink{ref18}{[18]} that simple handcrafted features compete with deep models.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Pooled confusion matrix of the Transformer with per-subject normalisation, grouped 10-fold cross-validation (counts; rows are true classes, columns are predicted classes), with per-class recall.}
+\label{tab:cv-subjnorm-confusion}
+\begin{tabular}{lccccc c}
+\hline
+\textbf{True} $\backslash$ \textbf{Pred.} & BL & PA1 & PA2 & PA3 & PA4 & Recall \\
+\hline
+BL & 670 & 524 & 248 & 210 & 68 & 39.0\% \\
+PA1 & 565 & 501 & 259 & 302 & 93 & 29.1\% \\
+PA2 & 429 & 473 & 280 & 398 & 140 & 16.3\% \\
+PA3 & 230 & 336 & 257 & 575 & 322 & 33.4\% \\
+PA4 & 95 & 184 & 132 & 435 & 874 & 50.8\% \\
+\hline
+\end{tabular}
+\end{table}
+
+The pattern of errors changed in the way the motivation predicted. Baseline now accounts for 23.1\% of predictions instead of 32.1\%, recall for PA1 rose from 19.6\% to 29.1\% and for PA3 from 21.7\% to 33.4\%, and recall for PA4 rose slightly from 47.6\% to 50.8\%, while recall for BL fell from 50.9\% to 39.0\%. This is consistent with removal of the personal resting-level offset reducing the tendency to label low-intensity trials as baseline, although the data do not isolate that mechanism. PA2 remains the weakest class (recall 16.3\%, below the 20\% expected from random guessing), indicating that adjacent intermediate intensities remain inseparable with these features. Computed from the pooled matrix, 71.3\% of predictions fall within one class of the true class, against 52\% expected under uniform random guessing.
+
+Three limitations apply. The variants were selected using the same 86 subjects that they were evaluated on, although all variants tried are reported and the final Transformer result is a single run of a pre-chosen configuration. Per-subject normalisation requires unlabeled data from each new individual. And the interpretability analyses (modality ablation, SHAP and attention) were performed on the Transformer trained on a single split without per-subject normalisation; they were not repeated for the normalised model.
+
+% ################## REPLACEMENT "Remaining Work" ####################
+% With the deep learning framework, the four-part causal and explainability
+% analysis, subject-independent cross-validation and the feature-engineering
+% experiments complete, remaining work includes repeating the interpretability
+% analyses for the per-subject-normalised model if time permits; completing
+% leave-one-subject-out validation; a subject-independent cross-validated
+% estimate for the binary model, whose reported accuracy derives from a single
+% split; an ordinal-loss variant of the five-class model; and consolidation of
+% these findings into the Results and Discussion chapters.

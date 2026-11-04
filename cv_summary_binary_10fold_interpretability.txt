@@ -1,0 +1,12 @@
+================================================================
+SUBJECT-INDEPENDENT RESULT  (86 held-out subjects, 3440 trials)
+================================================================
+Pooled accuracy : 0.7831   (chance = 0.50)
+  95% CI (bootstrap over subjects): 0.7453 - 0.8174
+Pooled macro-F1 : 0.7801
+Per-subject accuracy: mean 0.7831 +/- 0.1701 (min 0.45, max 1.00)
+
+Pooled confusion matrix (rows = true, cols = predicted):
+           BL   PA4
+     BL  1548   172
+    PA4   574  1146

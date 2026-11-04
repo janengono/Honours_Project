@@ -1,0 +1,39 @@
+# =====================================================================
+# Configuration for BioVid Part B preprocessing pipeline
+# Parameters here map directly to Section 3.2.2 / 3.2.3 of the proposal
+# =====================================================================
+
+paths:
+  root: "C:/Users/DELL/Downloads/PartB"              # <-- CHANGE THIS to your actual Part B root
+  samples_csv: "Samples.csv"
+  biosignals_raw_dir: "biosignals_raw"
+  output_dir: "data/processed"
+
+signal:
+  sampling_rate_hz: 512
+  time_unit: "microseconds"           # raw time column is in microseconds
+
+# --- ECG preprocessing (Section 3.2.2 - ECG) ---
+ecg:
+  bandpass_low_hz: 0.5
+  bandpass_high_hz: 40.0
+  filter_order: 4
+
+# --- EDA preprocessing (Section 3.2.2 - EDA) ---
+eda:
+  lowpass_cutoff_hz: 1.0
+  filter_order: 4
+  # tonic-phasic decomposition method: neurokit2 default (cvxEDA-based)
+  decomposition_method: "neurokit"
+
+# --- EMG preprocessing (Section 3.2.2 - EMG) ---
+emg:
+  highpass_cutoff_hz: 20.0
+  filter_order: 4
+  rms_window_ms: 125                  # RMS smoothing window
+  channels: ["emg_trapezius", "emg_corrugator", "emg_zygomaticus"]
+
+# --- Temporal sub-segmentation within each 5.5s trial (Section 3.2.3) ---
+segmentation:
+  sub_window_sec: 1.0                 # length of each sub-window fed to the Transformer as one timestep
+  overlap_sec: 0.5                    # overlap between sub-windows

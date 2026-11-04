@@ -1,0 +1,9 @@
+model,variant,accuracy,acc 95% CI,macro-F1,within-one,sec
+rf,A means only,0.270,0.253-0.287,0.264,0.606,13
+rf,B + shape,0.322,0.303-0.341,0.307,0.669,41
+rf,C + subject-norm,0.350,0.328-0.372,0.339,0.702,49
+rf,D + prior-match,0.352,0.329-0.374,0.338,0.697,49
+hgb,A means only,0.267,0.249-0.284,0.260,0.606,36
+hgb,B + shape,0.315,0.295-0.337,0.304,0.673,96
+hgb,C + subject-norm,0.347,0.323-0.370,0.339,0.706,100
+hgb,D + prior-match,0.349,0.326-0.373,0.341,0.709,96

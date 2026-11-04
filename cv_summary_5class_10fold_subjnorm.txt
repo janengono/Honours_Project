@@ -1,0 +1,15 @@
+================================================================
+SUBJECT-INDEPENDENT RESULT  (86 held-out subjects, 8600 trials)
+================================================================
+Pooled accuracy : 0.3372   (chance = 0.20)
+  95% CI (bootstrap over subjects): 0.3146 - 0.3581
+Pooled macro-F1 : 0.3364
+Per-subject accuracy: mean 0.3372 +/- 0.1018 (min 0.12, max 0.56)
+
+Pooled confusion matrix (rows = true, cols = predicted):
+           BL   PA1   PA2   PA3   PA4
+     BL   670   524   248   210    68
+    PA1   565   501   259   302    93
+    PA2   429   473   280   398   140
+    PA3   230   336   257   575   322
+    PA4    95   184   132   435   874

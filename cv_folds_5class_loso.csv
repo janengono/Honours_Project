@@ -1,0 +1,2 @@
+fold,test_subjects,n_test,test_acc,test_f1_macro,best_epoch,val_f1_macro,seconds
+0,1,100,0.41,0.3952754435107376,5,0.29621369806481407,257.3

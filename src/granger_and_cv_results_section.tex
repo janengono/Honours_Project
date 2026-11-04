@@ -1,0 +1,142 @@
+% ====================================================================
+% PART A REPLACES the previous granger_methodology_section.tex ENTIRELY.
+%   Delete the old Granger paragraph, its table, the "Comparison of the four
+%   analyses" paragraph and its table. The surrogate control changed the
+%   conclusion, so none of the old interpretation may remain.
+%
+% PART B is a new subsubsection. Put it after the subsubsection
+%   "Causal and Explainability Analysis Implementation" and before
+%   "Summary of Preliminary Findings".
+%
+% OTHER EDITS
+%   1. In "Summary of Preliminary Findings", replace the Granger bullet with:
+%        - After a surrogate null and subject-level analysis, Granger causality
+%          shows no trial-specific coupling between modalities; the rise of
+%          EMG--EDA dependence with pain is reproduced by pairing signals from
+%          different trials, consistent with a shared stimulus-locked profile.
+%      and add:
+%        - Subject-independent cross-validated five-class accuracy is 31.6\%
+%          (95\% CI 29.6--33.6\%) against 20\% chance.
+%   2. Replace the "Remaining Work" text with the paragraph at the very bottom.
+%   3. Keep reference [20] (Granger, 1969) from the earlier file.
+%   4. First sentence of the explainability subsubsection: "Four independent
+%      techniques".
+% Requires \usepackage{tabularx}.
+% ====================================================================
+
+
+% ############################ PART A ################################
+
+\paragraph{Granger causality (data-level causal discovery).} The three analyses above are model-based: each describes what the trained network relies on. To obtain evidence about directional structure in the physiological signals themselves, independent of any trained model, pairwise Granger causality \hyperlink{ref20}{[20]} was applied, following the causal-discovery category of the taxonomy in Sanchez et al.\ \hyperlink{ref17}{[17]}. A series $y$ is said to Granger-cause a series $x$ if the past of $y$ improves prediction of $x$ beyond what the past of $x$ alone provides. At lag one this is tested by comparing a restricted and an unrestricted autoregressive model,
+\[
+x_t = \alpha_0 + \alpha_1 x_{t-1} + \varepsilon_t
+\quad\text{versus}\quad
+x_t = \alpha_0 + \alpha_1 x_{t-1} + \beta_1 y_{t-1} + \varepsilon'_t ,
+\]
+with an F-test of the null hypothesis $\beta_1 = 0$. The test was implemented directly by least squares and verified against the statsmodels implementation (maximum absolute difference in $p$-value of $6.4\times10^{-14}$ over 200 random series).
+
+Two adaptations were necessary. First, pain intensity is constant within a 5.5-second trial, so there is no time-varying label to test against; the analysis therefore tests directional dependence \emph{between modalities} across the ten sub-windows of each trial. Each modality was summarised by one series per trial: the window mean of the filtered ECG, the window mean of the normalised EDA, and the average of the three EMG channel window means. Second, ten time points are too few for a reliable single test, so each trial was tested individually at lag one for all six directed modality pairs ($\alpha = 0.05$), and the proportion of significant trials was reported per class. Of 51{,}600 tests, 51{,}465 were non-degenerate.
+
+Because uncontrolled rates from short, smooth, autocorrelated series are difficult to interpret, two controls were added. (i) A \emph{surrogate null}: the cause series of each trial was paired with the effect series of a different trial from the same subject and the same class (cyclic shift by a random non-zero offset, three independent draws averaged). This preserves each series' own autocorrelation and any time course shared by trials of that class, but destroys trial-specific coupling, so the \emph{excess} of the real rate over the surrogate rate estimates the trial-specific part. (ii) \emph{Subject-level analysis}: because trials are nested within subjects, rates were computed per subject and classes were compared across the 86 subjects (paired Wilcoxon test, baseline versus PA4; Friedman test across the five classes), with Holm correction over the six pairs. Table~\ref{tab:granger-controls} reports the results.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Percentage of trials with a significant lag-one Granger dependence ($p<0.05$), averaged over subjects, for the real data and for the surrogate null (cause series paired with the effect series of another trial from the same subject and class; mean of three draws). The last two columns give Holm-adjusted $p$-values from paired Wilcoxon tests across 86 subjects comparing BL with PA4, for the real rate and for the excess over surrogate.}
+\label{tab:granger-controls}
+\begin{tabular}{lcccccc}
+\hline
+ & \multicolumn{2}{c}{\textbf{Real}} & \multicolumn{2}{c}{\textbf{Surrogate}} & \multicolumn{2}{c}{\textbf{Holm $p$, BL vs PA4}} \\
+\textbf{Pair} & BL & PA4 & BL & PA4 & Real & Excess \\
+\hline
+ECG $\rightarrow$ EDA & 3.1 & 2.3 & 3.9 & 2.2 & 0.318 & 1.000 \\
+ECG $\rightarrow$ EMG & 4.3 & 4.4 & 4.9 & 3.7 & 1.000 & 0.591 \\
+EDA $\rightarrow$ ECG & 1.1 & 1.2 & 1.4 & 1.4 & 1.000 & 1.000 \\
+EDA $\rightarrow$ EMG & 13.8 & 19.8 & 13.0 & 18.0 & 0.004 & 1.000 \\
+EMG $\rightarrow$ ECG & 3.6 & 2.3 & 4.2 & 2.7 & 0.118 & 1.000 \\
+EMG $\rightarrow$ EDA & 21.6 & 35.5 & 20.1 & 35.5 & $<$0.001 & 1.000 \\
+\hline
+\end{tabular}
+\end{table}
+
+All four pairs involving ECG lie between 1.1\% and 5.5\% in the real data, close to or below the nominal 5\% level, with no trend across pain classes and no excess over the surrogate. The two EMG--EDA pairs are the only ones well above this level, and their real rates rise with pain: EMG $\rightarrow$ EDA from 21.6\% at baseline to 35.5\% at PA4 (subject-level Holm $p<0.001$, Friedman Holm $p<0.001$), and EDA $\rightarrow$ EMG from 13.8\% to 19.8\% (Wilcoxon Holm $p=0.004$; the trend across all five classes is not significant after correction, Holm $p=0.064$). The surrogate null, however, reproduces these rates almost exactly in every class, and the excess over surrogate is within about two percentage points for every pair and class and is not significant at the subject level for any pair (all Holm $p\ge0.59$).
+
+The dependence between EMG and EDA, and its increase with pain, therefore cannot be attributed to trial-specific coupling: pairing the EMG series of one trial with the EDA series of a different trial from the same subject and class yields the same rates. This is consistent with a shared, stimulus-locked temporal profile that becomes more consistent across trials as pain intensity increases; under this reading the test detects the strengthening of a common evoked response, not the influence of one modality on another. The asymmetry between the two directions (EMG $\rightarrow$ EDA larger than EDA $\rightarrow$ EMG) is also present in the surrogate (35.5\% versus 18.0\% at PA4), so it does not indicate direction either. After controls, the Granger analysis thus yields a null result for trial-specific causal dependence between modalities, and the causal evidence in this study rests on the model-based interventional approximation described in Section 3.4.3.
+
+Three limitations apply. Each series has ten points and one lag, and the analysis uses window means rather than the 512\,Hz signals, so a null result does not exclude coupling at faster time scales or in longer recordings. Granger causality establishes predictive precedence, not mechanism. Finally, the window mean of a band-pass-filtered ECG is a weak summary of cardiac activity, so the absence of ECG dependence is weak evidence that ECG is uninformative.
+
+\paragraph{Comparison of the four analyses.} Table~\ref{tab:method-comparison} summarises what each method measures and found.
+
+\begin{table}[h]
+\centering
+\caption{Comparison of the interpretability and causal-analysis methods applied.}
+\label{tab:method-comparison}
+\begin{tabularx}{\textwidth}{p{0.17\textwidth} p{0.25\textwidth} p{0.11\textwidth} X}
+\hline
+\textbf{Method} & \textbf{What it measures} & \textbf{Model-dependent} & \textbf{Main finding} \\
+\hline
+Modality ablation & Necessity: performance drop when a modality is masked & Yes & 5-class: EDA $>$ EMG $>$ ECG; binary: EMG $>$ EDA $>$ ECG; ECG smallest in both \\
+SHAP & Attribution: contribution of feature values to predictions & Yes & EDA $>$ EMG $>$ ECG in both models \\
+Attention weights & Cross-modal attention allocation per class & Yes & Static across classes in the 5-class model; shifts in the binary model \\
+Granger causality (with surrogate null) & Directional temporal dependence between modalities within trials & No & ECG pairs at the nominal rate; EMG--EDA dependence rises with pain but is fully reproduced by the surrogate, so no trial-specific coupling is detected \\
+\hline
+\end{tabularx}
+\end{table}
+
+The model-based methods agree that ECG contributes least and that EDA and EMG carry the pain-relevant information. The Granger analysis agrees about ECG, but it does not provide independent evidence of directional coupling between EDA and EMG; the divergence between SHAP and ablation on the binary model therefore remains an unresolved, model-level finding.
+
+
+% ############################ PART B ################################
+
+\subsubsection{Subject-Independent Evaluation by Grouped Cross-Validation}
+
+A single validation split of 12 subjects gives a noisy estimate, and in the experiments above the best epoch was chosen on the same split that was reported, which is slightly optimistic. Subject-independent performance was therefore also estimated by grouped cross-validation. The 86 subjects were randomly partitioned into 10 folds of 8 to 9 subjects. For each fold, the held-out subjects formed the test set; the remaining subjects were divided into training (90\%) and validation (10\%) subjects; the feature scaler was fitted on the training subjects only; and the model was trained for up to 25 epochs with early stopping (patience 6) on validation macro-F1. The best-validation epoch was evaluated once on the held-out subjects, which were never used for model selection. The architecture and optimiser settings were those described in Section 3.3 (model dimension 64, two encoder layers per modality, dropout 0.2, label smoothing 0.05). Pooling the predictions covers every subject exactly once. Confidence intervals were obtained by bootstrap resampling of subjects (2{,}000 resamples), because trials from the same subject are not independent.
+
+Leave-one-subject-out validation (86 folds, Section 3.5) was implemented but not completed within the project time: at roughly four to five minutes per fold on CPU it requires about six hours. Grouped cross-validation is used as the subject-independent estimate instead; each model is trained on about 90\% rather than about 99\% of the subjects.
+
+Pooled five-class accuracy was 31.6\% (95\% CI 29.6--33.6\%; chance 20\%) and macro-F1 was 0.307. Fold accuracy ranged from 25.0\% to 35.6\%. Per-subject accuracy had mean 31.6\% with standard deviation 9.5\% (range 11\% to 52\%), indicating large between-subject variability. Table~\ref{tab:cv-summary} places this estimate beside the earlier ones, and Table~\ref{tab:cv-confusion} gives the pooled confusion matrix.
+
+\begin{table}[h]
+\centering
+\caption{Five-class performance under different evaluation schemes (chance accuracy 20\%).}
+\label{tab:cv-summary}
+\begin{tabularx}{\textwidth}{p{0.30\textwidth} p{0.18\textwidth} p{0.10\textwidth} X}
+\hline
+\textbf{Evaluation} & \textbf{Accuracy} & \textbf{F1-macro} & \textbf{Note} \\
+\hline
+Transformer, five random subject splits (12 validation subjects each) & 32.2\% $\pm$ 2.6 & 0.299 $\pm$ 0.034 & Best epoch chosen on the evaluated split \\
+Random Forest, one subject split & 28.7\% & 0.272 & Same handcrafted features; single split \\
+Transformer, grouped 10-fold cross-validation & 31.6\% (CI 29.6--33.6) & 0.307 & All 86 subjects tested; test subjects not used for model selection \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\caption{Pooled confusion matrix from grouped 10-fold cross-validation (counts; rows are true classes, columns are predicted classes) with per-class recall.}
+\label{tab:cv-confusion}
+\begin{tabular}{lccccc c}
+\hline
+\textbf{True} $\backslash$ \textbf{Pred.} & BL & PA1 & PA2 & PA3 & PA4 & Recall \\
+\hline
+BL & 876 & 346 & 273 & 162 & 63 & 50.9\% \\
+PA1 & 719 & 337 & 288 & 242 & 134 & 19.6\% \\
+PA2 & 584 & 302 & 314 & 328 & 192 & 18.3\% \\
+PA3 & 388 & 261 & 269 & 373 & 429 & 21.7\% \\
+PA4 & 197 & 156 & 207 & 341 & 819 & 47.6\% \\
+\hline
+\end{tabular}
+\end{table}
+
+Recall is highest for the extreme classes (BL 50.9\%, PA4 47.6\%) and close to chance for the three intermediate classes. The model over-predicts baseline, which accounts for 32.1\% of all predictions against a true share of 20\%; PA1 and PA2 trials are labelled BL in 41.8\% and 34.0\% of cases, and PA3 trials are labelled PA4 in 24.9\%. Errors are largely between neighbouring intensities: computed from the pooled matrix, 66.8\% of predictions fall within one class of the true class, against 52\% expected under uniform random guessing. This ordinal structure is not used by the categorical cross-entropy loss, which treats all errors equally, and motivates an ordinal loss as future work.
+
+
+% ################## REPLACEMENT "Remaining Work" ####################
+% With the deep learning framework, the four-part causal and explainability
+% analysis, and subject-independent cross-validation complete, remaining work
+% includes completing leave-one-subject-out validation if time permits; a
+% subject-independent cross-validated estimate for the binary model, whose
+% reported accuracy derives from a single split; an ordinal-loss variant of the
+% five-class model; and consolidation of these findings into the Results and
+% Discussion chapters.
